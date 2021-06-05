@@ -35,22 +35,25 @@ public class Producer {
 		int lineCount;
 		String line;
 		
-		Stream<String> stream = Files.lines(Paths.get("DurgRepoWorkload"));
+		Stream<String> stream = Files.lines(Paths.get("DrugRepoWorkload"));
 		lineCount = (int) stream.count();
+		stream.close();
 		
 		Connection connection = factory.newConnection();
 		Channel channel = connection.createChannel(); 
 		channel.queueDeclare(QUEUE_NAME, true, false, false, null);
 		long startTime = System.currentTimeMillis();
 		for(int i = 0 ; i < 100 ; i++) {
-			line = stream.skip(rand.nextInt(lineCount)).findFirst().get();
+			Stream<String> streamLine = Files.lines(Paths.get("DrugRepoWorkload"));
+			line = streamLine.skip(rand.nextInt(lineCount)).findFirst().get();
 			channel.basicPublish("", QUEUE_NAME, null, line.getBytes("UTF-8"));
-			System.out.println(line);
+			System.out.println(i + " " + line);
+			streamLine.close();
 		}
 		PrintWriter pw = new PrintWriter(RESULT_FILE_NAME);
 		pw.println("Rabbit Producer : " + (System.currentTimeMillis() - startTime));
 		pw.close();
-		stream.close();
-	}
+		connection.close();
+	} 
 
 }
